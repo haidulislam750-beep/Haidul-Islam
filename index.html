@@ -1,0 +1,1549 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>দৈনিক তথ্য আদায় - সোসাইটি ফর ফ্যামিলি হ্যাপিনেস এন্ড প্রসপারিটি (এফ এইচ পি)</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts: Hind Siliguri & Noto Sans Bengali for clean Bangla typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome for clean icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <!-- html2pdf.js for direct PDF file download -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Hind Siliguri', 'Noto Sans Bengali', sans-serif;
+            background-color: #f1f5f9;
+            color: #0f172a;
+        }
+
+        /* Official Report Table Styling matching the PDF structure */
+        .fhp-report-table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: #ffffff;
+            font-size: 13px;
+        }
+
+        .fhp-report-table th,
+        .fhp-report-table td {
+            border: 1.5px solid #1e293b;
+            padding: 6px 5px;
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        .fhp-report-table thead th {
+            background-color: #f8fafc;
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+        .fhp-report-table tbody tr:hover {
+            background-color: #f0fdf4;
+        }
+
+        .fhp-report-table tfoot td {
+            background-color: #ecfdf5;
+            font-weight: 700;
+            color: #064e3b;
+            border-top: 2px solid #0f172a;
+        }
+
+        /* Custom Scrollbar for responsive tables */
+        .table-container::-webkit-scrollbar {
+            height: 8px;
+        }
+        .table-container::-webkit-scrollbar-track {
+            background: #e2e8f0;
+            border-radius: 4px;
+        }
+        .table-container::-webkit-scrollbar-thumb {
+            background: #64748b;
+            border-radius: 4px;
+        }
+
+        /* Print Styles - A4 Landscape clean formatting */
+        @media print {
+            @page {
+                size: A4 landscape;
+                margin: 8mm;
+            }
+            body {
+                background-color: #ffffff !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            .no-print {
+                display: none !important;
+            }
+            .print-only {
+                display: block !important;
+            }
+            .print-container {
+                box-shadow: none !important;
+                border: none !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                width: 100% !important;
+                max-width: 100% !important;
+            }
+            .fhp-report-table {
+                font-size: 11px !important;
+            }
+            .fhp-report-table th,
+            .fhp-report-table td {
+                padding: 4px 3px !important;
+                border: 1px solid #000000 !important;
+            }
+            .table-container {
+                overflow: visible !important;
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed top-4 right-4 z-50 flex flex-col gap-2 no-print"></div>
+
+    <!-- Custom Modal Container (Replaces alert/confirm) -->
+    <div id="custom-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden items-center justify-center p-4 no-print">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 border border-slate-200 transform transition-all">
+            <div class="flex items-center gap-3 mb-3">
+                <div id="modal-icon" class="w-10 h-10 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-lg">
+                    <i class="fa-solid fa-circle-info"></i>
+                </div>
+                <h3 id="modal-title" class="text-xl font-bold text-slate-800">বার্তা</h3>
+            </div>
+            <p id="modal-message" class="text-slate-600 mb-6 text-base leading-relaxed"></p>
+            <div id="modal-actions" class="flex justify-end gap-3">
+                <button id="modal-cancel-btn" class="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 font-medium hover:bg-slate-100 transition">বাতিল</button>
+                <button id="modal-confirm-btn" class="px-5 py-2 rounded-xl bg-emerald-700 text-white font-semibold hover:bg-emerald-800 transition shadow-sm">ঠিক আছে</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Institutional Header (Navigation & Status) -->
+    <header class="bg-gradient-to-r from-emerald-900 via-emerald-800 to-teal-900 text-white shadow-lg no-print">
+        <div class="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div class="flex items-start sm:items-center gap-3.5">
+                    <div class="w-12 h-12 rounded-2xl bg-white/15 border border-white/25 flex items-center justify-center shrink-0 shadow-inner">
+                        <i class="fa-solid fa-hand-holding-heart text-2xl text-emerald-200"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-lg sm:text-2xl font-bold tracking-tight leading-snug text-white">
+                            সোসাইটি ফর ফ্যামিলি হ্যাপিনেস এন্ড প্রসপারিটি (এফ এইচ পি)
+                        </h1>
+                        <p class="text-xs sm:text-sm text-emerald-100 flex items-center gap-1.5 mt-0.5">
+                            <i class="fa-solid fa-location-dot text-emerald-300"></i>
+                            প্রধান কার্যালয়: দড়িকান্দি, বাজিতপুর, কিশোরগঞ্জ।
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Connection Status & Logout Button -->
+                <div class="flex items-center justify-between md:justify-end gap-3 border-t md:border-t-0 border-white/15 pt-3 md:pt-0">
+                    <div id="db-status-badge" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-white/10 text-emerald-100 border border-white/15">
+                        <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+                        <span>সংযোগ হচ্ছে...</span>
+                    </div>
+
+                    <button id="logout-btn" onclick="handleLogout()" class="hidden items-center gap-2 px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-sm font-semibold transition shadow-sm cursor-pointer">
+                        <i class="fa-solid fa-right-from-bracket"></i>
+                        <span>লগআউট</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 py-6 sm:px-6 lg:px-8">
+
+        <!-- ===================================================================== -->
+        <!-- SECTION 1: LOGIN / ROLE SELECTION SCREEN                              -->
+        <!-- ===================================================================== -->
+        <section id="login-section" class="max-w-4xl mx-auto my-4 sm:my-8 no-print">
+            <div class="text-center mb-8">
+                <span class="inline-block px-4 py-1.5 rounded-full bg-emerald-100 text-emerald-800 font-semibold text-sm mb-2 border border-emerald-200">
+                    অনলাইন দৈনিক তথ্য আদায় পোর্টাল
+                </span>
+                <h2 class="text-2xl sm:text-3xl font-bold text-slate-800">আপনার পদবী নির্বাচন করে প্রবেশ করুন</h2>
+                <p class="text-slate-600 mt-1 text-sm sm:text-base">এরিয়া ম্যানেজার শুধুমাত্র মোবাইল নম্বর দিয়ে এবং জোনাল ম্যানেজার এডমিন আইডি দিয়ে লগইন করবেন</p>
+            </div>
+
+            <!-- Role Switcher Tabs -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                
+                <!-- Card 1: Area Manager Login -->
+                <div class="bg-white rounded-2xl shadow-md border-2 border-emerald-600/20 hover:border-emerald-600 transition-all p-6 sm:p-7 flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center gap-3 mb-5 pb-4 border-b border-slate-100">
+                            <div class="w-12 h-12 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center text-xl">
+                                <i class="fa-solid fa-user-tie"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-bold text-slate-800">এরিয়া ম্যানেজার লগইন</h3>
+                                <p class="text-xs text-emerald-700 font-medium">কোনো আইডি বা পাসওয়ার্ডের প্রয়োজন নেই</p>
+                            </div>
+                        </div>
+
+                        <form id="area-login-form" onsubmit="handleAreaManagerLogin(event)" class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-1.5">
+                                    মোবাইল নম্বর লিখুন <span class="text-rose-600">*</span>
+                                </label>
+                                <div class="relative">
+                                    <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">
+                                        <i class="fa-solid fa-phone"></i>
+                                    </span>
+                                    <input type="tel" id="am-phone-input" required placeholder="উদাঃ 017XXXXXXXX" maxlength="14"
+                                        class="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none text-base font-medium">
+                                </div>
+                                <p class="text-xs text-slate-500 mt-1">১১ ডিজিটের সচল মোবাইল নম্বর দিন (বাংলা বা ইংরেজি সংখ্যায়)</p>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-1.5">
+                                    আপনার এরিয়ার নাম নির্বাচন করুন <span class="text-rose-600">*</span>
+                                </label>
+                                <div class="relative">
+                                    <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">
+                                        <i class="fa-solid fa-map-location-dot"></i>
+                                    </span>
+                                    <select id="am-area-select" onchange="toggleCustomAreaInput()" required
+                                        class="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none text-base font-medium bg-white">
+                                        <option value="">-- এরিয়া বাছাই করুন --</option>
+                                        <option value="1">১. বাজিতপুর</option>
+                                        <option value="2">২. কুলিয়ারচর</option>
+                                        <option value="3">৩. কটিয়াদী</option>
+                                        <option value="4">৪. কিশোরগঞ্জ</option>
+                                        <option value="5">৫. মিঠামইন</option>
+                                        <option value="6">৬. হোসেনপুর</option>
+                                        <option value="7">৭. ঈশ্বরগঞ্জ</option>
+                                        <option value="8">৮. অন্যান্য এরিয়া (হাতে লিখুন)</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div id="custom-area-wrapper" class="hidden">
+                                <label class="block text-sm font-semibold text-slate-700 mb-1.5">
+                                    ৮নং এরিয়ার নাম হাতে লিখুন <span class="text-rose-600">*</span>
+                                </label>
+                                <input type="text" id="am-custom-area-name" placeholder="এরিয়ার নাম লিখুন..."
+                                    class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none text-base">
+                            </div>
+
+                            <button type="submit"
+                                class="w-full py-3.5 px-5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-base shadow-md hover:shadow-lg transition flex items-center justify-center gap-2 cursor-pointer mt-2">
+                                <span>তথ্য প্রদানের জন্য প্রবেশ করুন</span>
+                                <i class="fa-solid fa-arrow-right"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Card 2: Zonal Manager / Admin Login -->
+                <div class="bg-white rounded-2xl shadow-md border-2 border-slate-200 hover:border-slate-700 transition-all p-6 sm:p-7 flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center gap-3 mb-5 pb-4 border-b border-slate-100">
+                            <div class="w-12 h-12 rounded-xl bg-slate-800 text-white flex items-center justify-center text-xl">
+                                <i class="fa-solid fa-user-shield"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-bold text-slate-800">জোনাল ম্যানেজার (এডমিন)</h3>
+                                <p class="text-xs text-slate-500 font-medium">সকল এরিয়ার কনসোলিডেটেড রিপোর্ট ও প্রিন্ট</p>
+                            </div>
+                        </div>
+
+                        <form id="zonal-login-form" onsubmit="handleZonalManagerLogin(event)" class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-1.5">
+                                    এডমিন ইউজার আইডি <span class="text-rose-600">*</span>
+                                </label>
+                                <div class="relative">
+                                    <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">
+                                        <i class="fa-solid fa-id-badge"></i>
+                                    </span>
+                                    <input type="text" id="zm-userid-input" required placeholder="ইউজার আইডি লিখুন"
+                                        class="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-slate-700 focus:border-slate-700 outline-none text-base">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-1.5">
+                                    পাসওয়ার্ড <span class="text-rose-600">*</span>
+                                </label>
+                                <div class="relative">
+                                    <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">
+                                        <i class="fa-solid fa-lock"></i>
+                                    </span>
+                                    <input type="password" id="zm-password-input" required placeholder="পাসওয়ার্ড লিখুন"
+                                        class="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-slate-700 focus:border-slate-700 outline-none text-base">
+                                </div>
+                            </div>
+
+                            <!-- Demo Credentials Helper Box -->
+                            <div class="p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900 flex items-center justify-between gap-2">
+                                <div>
+                                    <span class="font-bold block"><i class="fa-solid fa-key mr-1"></i> এডমিন লগইন তথ্য:</span>
+                                    <span>আইডি: <code class="font-mono font-bold bg-white px-1.5 py-0.5 rounded border border-amber-300">admin</code> | পাসওয়ার্ড: <code class="font-mono font-bold bg-white px-1.5 py-0.5 rounded border border-amber-300">1234</code></span>
+                                </div>
+                                <button type="button" onclick="fillDemoAdmin()" class="px-2.5 py-1.5 rounded-lg bg-amber-200 hover:bg-amber-300 text-amber-950 font-semibold shrink-0 transition cursor-pointer">
+                                    অটো পূরণ
+                                </button>
+                            </div>
+
+                            <button type="submit"
+                                class="w-full py-3.5 px-5 rounded-xl bg-slate-800 hover:bg-slate-900 text-white font-bold text-base shadow-md hover:shadow-lg transition flex items-center justify-center gap-2 cursor-pointer">
+                                <span>এডমিন প্যানেলে প্রবেশ করুন</span>
+                                <i class="fa-solid fa-shield-halved"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ===================================================================== -->
+        <!-- SECTION 2: AREA MANAGER DATA ENTRY DASHBOARD                          -->
+        <!-- ===================================================================== -->
+        <section id="area-manager-section" class="hidden space-y-6 no-print">
+            
+            <!-- Area Manager Info Banner -->
+            <div class="bg-white rounded-2xl shadow-sm border border-emerald-200 p-4 sm:p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div class="flex items-center gap-4">
+                    <div class="w-14 h-14 rounded-2xl bg-emerald-100 text-emerald-800 flex items-center justify-center text-2xl font-bold shrink-0">
+                        <span id="am-badge-serial">১</span>
+                    </div>
+                    <div>
+                        <div class="flex flex-wrap items-center gap-2">
+                            <span class="px-2.5 py-0.5 rounded-md bg-emerald-700 text-white text-xs font-bold">এরিয়া ম্যানেজার</span>
+                            <span class="text-sm text-slate-500 font-medium"><i class="fa-solid fa-phone mr-1 text-emerald-600"></i><span id="am-display-phone"></span></span>
+                        </div>
+                        <h2 class="text-xl sm:text-2xl font-bold text-slate-800 mt-1">
+                            এরিয়া: <span id="am-display-area" class="text-emerald-700"></span>
+                        </h2>
+                    </div>
+                </div>
+
+                <div class="bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3 text-sm text-emerald-900">
+                    <i class="fa-solid fa-circle-info text-emerald-600 mr-1.5"></i>
+                    আপনি শুধুমাত্র আপনার নিজস্ব এরিয়ার দৈনিক তথ্য প্রদান ও হালনাগাদ করতে পারবেন। সকল সংখ্যা হাতে লিখুন।
+                </div>
+            </div>
+
+            <!-- Date & Region Metadata Card -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 sm:p-6">
+                <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2 border-b border-slate-100 pb-3">
+                    <i class="fa-solid fa-calendar-days text-emerald-700"></i>
+                    <span>তারিখ ও অঞ্চলের সাধারণ তথ্য</span>
+                </h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1">অঞ্চলের নাম</label>
+                        <input type="text" id="entry-region" value="কিশোরগঞ্জ অঞ্চল" placeholder="অঞ্চলের নাম লিখুন"
+                            class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500 outline-none font-medium">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1">তারিখ নির্বাচন করুন <span class="text-rose-600">*</span></label>
+                        <input type="date" id="entry-date" onchange="onEntryDateChange()"
+                            class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500 outline-none font-medium">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1">বার</label>
+                        <input type="text" id="entry-day" placeholder="উদাঃ মঙ্গলবার"
+                            class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none font-medium">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1">মাসের নাম</label>
+                        <input type="text" id="entry-month" placeholder="উদাঃ নভেম্বর ২০২৬"
+                            class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none font-medium">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Manual Data Entry Form -->
+            <form id="daily-collection-form" onsubmit="handleSaveAreaEntry(event)" class="space-y-6">
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                    
+                    <!-- 1. সদস্য (+/-) -->
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+                        <div class="flex items-center gap-2.5 mb-3 pb-2 border-b border-slate-100">
+                            <span class="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-800 font-bold flex items-center justify-center text-sm">১</span>
+                            <h4 class="font-bold text-slate-800 text-base">সদস্য (+/-)</h4>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">সদস্য বৃদ্ধি বা হ্রাস (+/- সংখ্যা লিখুন)</label>
+                            <input type="text" id="field-member-change" placeholder="উদাঃ +5 বা -2 বা 0"
+                                class="w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500 outline-none text-lg font-semibold">
+                        </div>
+                    </div>
+
+                    <!-- 2. আদায়যোগ্য -->
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+                        <div class="flex items-center gap-2.5 mb-3 pb-2 border-b border-slate-100">
+                            <span class="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-800 font-bold flex items-center justify-center text-sm">২</span>
+                            <h4 class="font-bold text-slate-800 text-base">আদায়যোগ্য</h4>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">জন</label>
+                                <input type="text" id="field-collectible-person" placeholder="০"
+                                    class="w-full px-3.5 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500 outline-none text-base font-semibold">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">টাকা</label>
+                                <input type="text" id="field-collectible-amount" placeholder="০"
+                                    class="w-full px-3.5 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500 outline-none text-base font-semibold">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 3. আদায়ের বাকী -->
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+                        <div class="flex items-center gap-2.5 mb-3 pb-2 border-b border-slate-100">
+                            <span class="w-7 h-7 rounded-lg bg-amber-100 text-amber-800 font-bold flex items-center justify-center text-sm">৩</span>
+                            <h4 class="font-bold text-slate-800 text-base">আদায়ের বাকী</h4>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">জন</label>
+                                <input type="text" id="field-due-person" placeholder="০"
+                                    class="w-full px-3.5 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500 outline-none text-base font-semibold">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">টাকা</label>
+                                <input type="text" id="field-due-amount" placeholder="০"
+                                    class="w-full px-3.5 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500 outline-none text-base font-semibold">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 4. বকেয়া আদায় -->
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 md:col-span-2 lg:col-span-2">
+                        <div class="flex items-center gap-2.5 mb-3 pb-2 border-b border-slate-100">
+                            <span class="w-7 h-7 rounded-lg bg-blue-100 text-blue-800 font-bold flex items-center justify-center text-sm">৪</span>
+                            <h4 class="font-bold text-slate-800 text-base">বকেয়া আদায়</h4>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">জন</label>
+                                <input type="text" id="field-overdue-person" placeholder="০"
+                                    class="w-full px-3.5 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500 outline-none text-base font-semibold">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">টাকা</label>
+                                <input type="text" id="field-overdue-amount" placeholder="০"
+                                    class="w-full px-3.5 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500 outline-none text-base font-semibold">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-rose-700 mb-1">মাইনাস জন</label>
+                                <input type="text" id="field-overdue-minus" placeholder="০"
+                                    class="w-full px-3.5 py-3 rounded-xl border border-rose-200 bg-rose-50/30 focus:bg-white focus:ring-2 focus:ring-rose-500 outline-none text-base font-semibold">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 5. ঋণ ফরম -->
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+                        <div class="flex items-center gap-2.5 mb-3 pb-2 border-b border-slate-100">
+                            <span class="w-7 h-7 rounded-lg bg-purple-100 text-purple-800 font-bold flex items-center justify-center text-sm">৫</span>
+                            <h4 class="font-bold text-slate-800 text-base">ঋণ ফরম</h4>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">জন</label>
+                                <input type="text" id="field-loanform-person" placeholder="০"
+                                    class="w-full px-3.5 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500 outline-none text-base font-semibold">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">টাকা</label>
+                                <input type="text" id="field-loanform-amount" placeholder="০"
+                                    class="w-full px-3.5 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500 outline-none text-base font-semibold">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 6. LDP (এলডিপি) + Manual Product Names List -->
+                    <div class="bg-white rounded-2xl shadow-sm border-2 border-teal-600/30 p-5 md:col-span-2">
+                        <div class="flex flex-wrap items-center justify-between gap-2 mb-3 pb-2 border-b border-slate-100">
+                            <div class="flex items-center gap-2.5">
+                                <span class="w-7 h-7 rounded-lg bg-teal-100 text-teal-800 font-bold flex items-center justify-center text-sm">৬</span>
+                                <h4 class="font-bold text-slate-800 text-base">LDP (এলডিপি) ও পণ্যের নামের তালিকা</h4>
+                            </div>
+                            <span id="am-ldp-count-badge" class="px-3 py-1 rounded-full bg-teal-100 text-teal-900 text-xs font-bold">
+                                মোট পণ্য: ০ টি
+                            </span>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3 mb-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">LDP জন</label>
+                                <input type="text" id="field-ldp-person" placeholder="০"
+                                    class="w-full px-3.5 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-teal-500 outline-none text-base font-semibold">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">LDP টাকা</label>
+                                <input type="text" id="field-ldp-amount" placeholder="০"
+                                    class="w-full px-3.5 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-teal-500 outline-none text-base font-semibold">
+                            </div>
+                        </div>
+
+                        <!-- Manual Product List Inputs -->
+                        <div class="bg-slate-50 rounded-xl p-4 border border-slate-200">
+                            <div class="flex items-center justify-between mb-2.5">
+                                <label class="text-sm font-bold text-slate-700">
+                                    পণ্যের নামের তালিকা হাতে লিখুন:
+                                </label>
+                                <button type="button" onclick="addLdpProductRow()"
+                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-teal-700 hover:bg-teal-800 text-white text-xs font-semibold transition cursor-pointer">
+                                    <i class="fa-solid fa-plus"></i>
+                                    <span>আরও পণ্য যোগ করুন</span>
+                                </button>
+                            </div>
+                            <p class="text-xs text-slate-500 mb-3">প্রতিটি ঘরে একটি করে পণ্যের নাম লিখুন (যেমন: রাইস কুকার, সিলিং ফ্যান, সেলাই মেশিন ইত্যাদি)</p>
+                            
+                            <div id="ldp-products-container" class="space-y-2.5">
+                                <!-- Dynamic product input rows injected by JS -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 7. ক্যাশ ইন হ্যান্ড আদায় -->
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+                        <div class="flex items-center gap-2.5 mb-3 pb-2 border-b border-slate-100">
+                            <span class="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-800 font-bold flex items-center justify-center text-sm">৭</span>
+                            <h4 class="font-bold text-slate-800 text-base">ক্যাশ ইন হ্যান্ড আদায়</h4>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">জন</label>
+                                <input type="text" id="field-cash-person" placeholder="০"
+                                    class="w-full px-3.5 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500 outline-none text-base font-semibold">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">টাকা</label>
+                                <input type="text" id="field-cash-amount" placeholder="০"
+                                    class="w-full px-3.5 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500 outline-none text-base font-semibold">
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Submit Button Bar -->
+                <div class="bg-white rounded-2xl shadow-md border border-emerald-200 p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div class="text-sm text-slate-600">
+                        <i class="fa-solid fa-shield-check text-emerald-600 mr-1.5"></i>
+                        তথ্য জমা দিলে জোনাল ম্যানেজারের মূল প্রতিবেদনে সরাসরি যুক্ত হয়ে যাবে।
+                    </div>
+                    <button type="submit" id="save-entry-btn"
+                        class="w-full sm:w-auto px-8 py-4 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-lg shadow-lg hover:shadow-xl transition flex items-center justify-center gap-2.5 cursor-pointer">
+                        <i class="fa-solid fa-paper-plane"></i>
+                        <span>দৈনিক তথ্য জমা দিন</span>
+                    </button>
+                </div>
+            </form>
+
+            <!-- Area Manager's Own Submission Preview Card -->
+            <div id="am-submitted-preview" class="hidden bg-white rounded-2xl shadow-sm border border-emerald-300 p-5 sm:p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-bold text-emerald-900 flex items-center gap-2">
+                        <i class="fa-solid fa-circle-check text-emerald-600"></i>
+                        <span>এই তারিখে আপনার জমাকৃত তথ্যের সারসংক্ষেপ</span>
+                    </h3>
+                    <span id="am-last-updated" class="text-xs text-slate-500 font-medium"></span>
+                </div>
+                <div id="am-preview-content" class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 text-sm"></div>
+            </div>
+
+        </section>
+
+        <!-- ===================================================================== -->
+        <!-- SECTION 3: ZONAL MANAGER CONSOLIDATED DASHBOARD & PRINT REPORT        -->
+        <!-- ===================================================================== -->
+        <section id="zonal-manager-section" class="hidden space-y-6">
+            
+            <!-- Admin Control & Filter Bar (Hidden during print) -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 no-print">
+                <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 mb-4 border-b border-slate-100">
+                    <div>
+                        <span class="px-2.5 py-0.5 rounded-md bg-slate-800 text-white text-xs font-bold">জোনাল ম্যানেজার এডমিন প্যানেল</span>
+                        <h2 class="text-xl sm:text-2xl font-bold text-slate-800 mt-1">সমন্বিত (Consolidated) দৈনিক তথ্য আদায় প্রতিবেদন</h2>
+                    </div>
+
+                    <!-- Print & PDF Action Buttons -->
+                    <div class="flex flex-wrap items-center gap-3">
+                        <button onclick="downloadPdfReport()"
+                            class="px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-sm shadow-sm transition flex items-center gap-2 cursor-pointer">
+                            <i class="fa-solid fa-file-pdf"></i>
+                            <span>PDF ফাইল ডাউনলোড</span>
+                        </button>
+                        <button onclick="window.print()"
+                            class="px-5 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-sm shadow-sm transition flex items-center gap-2 cursor-pointer">
+                            <i class="fa-solid fa-print"></i>
+                            <span>প্রিন্ট করুন</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Date & Region Filter Controls -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-1">রিপোর্টের তারিখ নির্বাচন করুন</label>
+                        <input type="date" id="zm-filter-date" onchange="renderZonalReport()"
+                            class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-600 outline-none font-semibold text-slate-800">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-1">অঞ্চলের নাম (রিপোর্ট হেডারের জন্য)</label>
+                        <input type="text" id="zm-region-override" oninput="renderZonalReport()" placeholder="কিশোরগঞ্জ অঞ্চল"
+                            class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-600 outline-none font-semibold text-slate-800">
+                    </div>
+                    <div class="flex items-center justify-between sm:justify-end gap-2 bg-slate-50 px-4 py-2.5 rounded-xl border border-slate-200">
+                        <span class="text-xs font-semibold text-slate-600">তথ্য জমা দিয়েছে:</span>
+                        <span id="zm-submitted-count" class="text-base font-bold text-emerald-700">০ / ৮ টি এরিয়া</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================================================================= -->
+            <!-- OFFICIAL PRINTABLE REPORT SHEET (EXACT PDF REPLICA)               -->
+            <!-- ================================================================= -->
+            <div id="printable-report-area" class="bg-white rounded-2xl shadow-md border border-slate-300 p-5 sm:p-8 print-container">
+                
+                <!-- Official Report Header matching PDF -->
+                <div class="text-center mb-4">
+                    <h1 class="text-xl sm:text-2xl font-bold text-slate-900">
+                        সোসাইটি ফর ফ্যামিলি হ্যাপিনেস এন্ড প্রসপারিটি (এফ এইচ পি)
+                    </h1>
+                    <p class="text-sm sm:text-base font-semibold text-slate-800 mt-0.5">
+                        প্রধান কার্যালয়: দড়িকান্দি, বাজিতপুর, কিশোরগঞ্জ।
+                    </p>
+                    <div class="inline-block mt-2 px-5 py-1 border-2 border-slate-800 rounded-md font-bold text-base sm:text-lg text-slate-900">
+                        দৈনিক তথ্য আদায়
+                    </div>
+                </div>
+
+                <!-- Top Metadata Row (অঞ্চলের নাম, তারিখ, বার) -->
+                <div class="flex flex-wrap items-center justify-between gap-4 text-sm sm:text-base font-bold text-slate-900 mb-3 px-1">
+                    <div>অঞ্চলের নাম: <span id="rep-region-name" class="font-semibold underline decoration-dotted underline-offset-4">কিশোরগঞ্জ অঞ্চল</span></div>
+                    <div>তারিখ: <span id="rep-date-text" class="font-semibold underline decoration-dotted underline-offset-4"></span></div>
+                    <div>বার: <span id="rep-day-text" class="font-semibold underline decoration-dotted underline-offset-4"></span></div>
+                </div>
+
+                <!-- Exact Multi-Header Consolidated Table -->
+                <div class="table-container overflow-x-auto">
+                    <table class="fhp-report-table">
+                        <thead>
+                            <tr>
+                                <th rowspan="2" class="w-12">ক্রমিক নং</th>
+                                <th rowspan="2" class="min-w-[110px]">এরিয়ার নাম</th>
+                                <th rowspan="2" class="w-16">সদস্য<br>(+/-)</th>
+                                <th colspan="2">আদায়যোগ্য</th>
+                                <th colspan="2">আদায়ের বাকী</th>
+                                <th colspan="3">বকেয়া আদায়</th>
+                                <th colspan="2">ঋণ ফরম</th>
+                                <th colspan="3">LDP</th>
+                                <th colspan="2">ক্যাশ ইন হ্যান্ড আদায়</th>
+                            </tr>
+                            <tr>
+                                <!-- আদায়যোগ্য -->
+                                <th class="w-14">জন</th>
+                                <th class="w-20">টাকা</th>
+                                <!-- আদায়ের বাকী -->
+                                <th class="w-14">জন</th>
+                                <th class="w-20">টাকা</th>
+                                <!-- বকেয়া আদায় -->
+                                <th class="w-14">জন</th>
+                                <th class="w-20">টাকা</th>
+                                <th class="w-16">মাইনাস জন</th>
+                                <!-- ঋণ ফরম -->
+                                <th class="w-14">জন</th>
+                                <th class="w-20">টাকা</th>
+                                <!-- LDP -->
+                                <th class="w-14">জন</th>
+                                <th class="w-20">টাকা</th>
+                                <th class="min-w-[140px]">পণ্যের নাম</th>
+                                <!-- ক্যাশ ইন হ্যান্ড আদায় -->
+                                <th class="w-14">জন</th>
+                                <th class="w-20">টাকা</th>
+                            </tr>
+                        </thead>
+                        <tbody id="zonal-report-tbody">
+                            <!-- 8 Areas Rows generated dynamically -->
+                        </tbody>
+                        <tfoot id="zonal-report-tfoot">
+                            <!-- Total Row with Consolidated Sum & Total LDP Product Count -->
+                        </tfoot>
+                    </table>
+                </div>
+
+                <!-- Bottom Metadata & Consolidated LDP Product Summary -->
+                <div class="mt-4 flex flex-col sm:flex-row sm:items-start justify-between gap-4 text-sm text-slate-900">
+                    <div class="font-bold text-base">
+                        মাসের নাম: <span id="rep-month-text" class="font-semibold underline decoration-dotted underline-offset-4"></span>
+                    </div>
+
+                    <!-- Consolidated LDP Products Box -->
+                    <div class="border border-slate-800 rounded-lg p-3 bg-slate-50/70 max-w-2xl w-full">
+                        <div class="flex items-center justify-between border-b border-slate-400 pb-1.5 mb-2">
+                            <span class="font-bold text-slate-900">সমন্বিত (Consolidated) LDP পণ্যের তালিকা:</span>
+                            <span id="consolidated-ldp-total-badge" class="font-bold text-emerald-900 bg-emerald-100 px-2.5 py-0.5 rounded border border-emerald-700">
+                                সর্বমোট পণ্য: ০ টি
+                            </span>
+                        </div>
+                        <p id="consolidated-ldp-names-list" class="text-xs sm:text-sm text-slate-800 leading-relaxed">
+                            কোনো পণ্য যুক্ত করা হয়নি।
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Signature Footer for Official Print -->
+                <div class="mt-12 pt-4 flex items-center justify-between text-sm font-bold text-slate-800 px-4">
+                    <div class="text-center">
+                        <div class="w-40 border-t border-slate-800 pt-1">প্রস্তুতকারীর স্বাক্ষর</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="w-44 border-t border-slate-800 pt-1">জোনাল ম্যানেজারের স্বাক্ষর</div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Area Submission Logs & Admin Actions (Hidden during print) -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 sm:p-6 no-print">
+                <h3 class="text-lg font-bold text-slate-800 mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-list-check text-emerald-700"></i>
+                    <span>নির্বাচিত তারিখে এরিয়া ম্যানেজারদের তথ্য জমার বিবরণ</span>
+                </h3>
+                <div id="submission-logs-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                    <!-- Submission status cards for each area -->
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-slate-900 text-slate-400 text-center py-4 text-xs mt-auto no-print">
+        <p>© ২০২৬ সোসাইটি ফর ফ্যামিলি হ্যাপিনেস এন্ড প্রসপারিটি (এফ এইচ পি) | প্রধান কার্যালয়: দড়িকান্দি, বাজিতপুর, কিশোরগঞ্জ।</p>
+    </footer>
+
+    <!-- ===================================================================== -->
+    <!-- FIREBASE & APPLICATION LOGIC                                          -->
+    <!-- ===================================================================== -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, deleteDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // ---------------------------------------------------------------------
+        // 1. DEFAULT AREAS & BANGLA HELPERS
+        // ---------------------------------------------------------------------
+        const DEFAULT_AREAS = [
+            { id: "1", serial: "১", name: "বাজিতপুর" },
+            { id: "2", serial: "২", name: "কুলিয়ারচর" },
+            { id: "3", serial: "৩", name: "কটিয়াদী" },
+            { id: "4", serial: "৪", name: "কিশোরগঞ্জ" },
+            { id: "5", serial: "৫", name: "মিঠামইন" },
+            { id: "6", serial: "৬", name: "হোসেনপুর" },
+            { id: "7", serial: "৭", name: "ঈশ্বরগঞ্জ" },
+            { id: "8", serial: "৮", name: "" }
+        ];
+
+        const BANGLA_DAYS = ["রবিবার", "সোমবার", "মঙ্গলবার", "বুধবার", "বৃহস্পতিবার", "শুক্রবার", "শনিবার"];
+        const BANGLA_MONTHS = ["জানুয়ারি", "ফেব্রুয়ারি", "মার্চ", "এপ্রিল", "মে", "জুন", "জুলাই", "আগস্ট", "সেপ্টেম্বর", "অক্টোবর", "নভেম্বর", "ডিসেম্বর"];
+
+        // Convert English digits to Bangla digits
+        function toBanglaDigits(input) {
+            if (input === null || input === undefined || input === "") return "";
+            const banglaMap = { '0': '০', '1': '১', '2': '২', '3': '৩', '4': '৪', '5': '৫', '6': '৬', '7': '৭', '8': '৮', '9': '৯' };
+            return String(input).replace(/[0-9]/g, d => banglaMap[d]);
+        }
+
+        // Convert Bangla digits to English digits for accurate arithmetic
+        function toEnglishDigits(input) {
+            if (input === null || input === undefined) return "";
+            const engMap = { '০': '0', '১': '1', '২': '2', '৩': '3', '৪': '4', '৫': '5', '৬': '6', '৭': '7', '৮': '8', '৯': '9' };
+            return String(input).replace(/[০-৯]/g, d => engMap[d]);
+        }
+
+        // Parse number safely (supports Bangla/English digits, +/- signs, commas)
+        function parseNumericValue(val) {
+            if (!val) return 0;
+            const cleaned = toEnglishDigits(String(val)).replace(/,/g, '').trim();
+            const num = parseFloat(cleaned);
+            return isNaN(num) ? 0 : num;
+        }
+
+        // Format number cleanly in Bangla
+        function formatBanglaNumber(num) {
+            if (num === 0) return "০";
+            const formatted = Number.isInteger(num) ? num.toString() : num.toFixed(2);
+            return toBanglaDigits(formatted);
+        }
+
+        // Get today's YYYY-MM-DD in local timezone
+        function getTodayISO() {
+            const now = new Date();
+            const offset = now.getTimezoneOffset();
+            const local = new Date(now.getTime() - (offset * 60 * 1000));
+            return local.toISOString().split('T')[0];
+        }
+
+        // Format YYYY-MM-DD to Bangla readable date (e.g., ১৭/১১/২০২৬)
+        function formatBanglaDate(isoDate) {
+            if (!isoDate) return "";
+            const parts = isoDate.split("-");
+            if (parts.length !== 3) return toBanglaDigits(isoDate);
+            return `${toBanglaDigits(parts[2])}/${toBanglaDigits(parts[1])}/${toBanglaDigits(parts[0])}`;
+        }
+
+        // ---------------------------------------------------------------------
+        // 2. APPLICATION STATE & FIREBASE SETUP
+        // ---------------------------------------------------------------------
+        let db = null;
+        let auth = null;
+        let currentUser = null;
+        let isFirebaseReady = false;
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'fhp-daily-collection-app';
+
+        // In-memory store synced with Firestore (and localStorage fallback if offline/unconfigured)
+        let allEntriesMap = {}; // key: `${date}_${areaId}` -> entry object
+
+        // Current Session State
+        let sessionState = {
+            role: null, // 'area' | 'zonal'
+            phone: '',
+            areaId: '',
+            areaName: '',
+            areaSerial: ''
+        };
+
+        async function initFirebase() {
+            const statusBadge = document.getElementById('db-status-badge');
+            try {
+                if (typeof __firebase_config !== 'undefined' && __firebase_config) {
+                    const firebaseConfig = JSON.parse(__firebase_config);
+                    const app = initializeApp(firebaseConfig);
+                    auth = getAuth(app);
+                    db = getFirestore(app);
+
+                    // Rule 3: Authenticate BEFORE any Firestore queries
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                        await signInWithCustomToken(auth, __initial_auth_token);
+                    } else {
+                        await signInAnonymously(auth);
+                    }
+
+                    onAuthStateChanged(auth, (user) => {
+                        if (user) {
+                            currentUser = user;
+                            isFirebaseReady = true;
+                            statusBadge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400"></span><span>ক্লাউড ডাটাবেস সংযুক্ত</span>`;
+                            subscribeToEntries();
+                        }
+                    });
+                } else {
+                    throw new Error("Firebase config not provided");
+                }
+            } catch (err) {
+                console.warn("Running in local memory fallback mode:", err);
+                statusBadge.innerHTML = `<span class="w-2 h-2 rounded-full bg-sky-400"></span><span>লোকাল মোড সক্রিয়</span>`;
+                loadLocalFallback();
+            }
+        }
+
+        function loadLocalFallback() {
+            try {
+                const saved = localStorage.getItem('fhp_entries_backup');
+                if (saved) {
+                    allEntriesMap = JSON.parse(saved);
+                }
+            } catch (e) {
+                console.error(e);
+            }
+            refreshActiveViews();
+        }
+
+        function saveLocalFallback() {
+            try {
+                localStorage.setItem('fhp_entries_backup', JSON.stringify(allEntriesMap));
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        // Rule 1 & Rule 2: Public shared collection path, simple query without compound indexes
+        function subscribeToEntries() {
+            if (!db || !currentUser) return;
+            const entriesCol = collection(db, 'artifacts', appId, 'public', 'data', 'daily_entries');
+            onSnapshot(entriesCol, (snapshot) => {
+                const updated = {};
+                snapshot.forEach((docSnap) => {
+                    updated[docSnap.id] = docSnap.data();
+                });
+                allEntriesMap = updated;
+                saveLocalFallback();
+                refreshActiveViews();
+            }, (error) => {
+                console.error("Firestore subscription error:", error);
+                showToast("ডাটা লোড করতে সমস্যা হয়েছে, লোকাল ডাটা দেখানো হচ্ছে।", "error");
+            });
+        }
+
+        function refreshActiveViews() {
+            if (sessionState.role === 'area') {
+                loadAreaExistingDataForSelectedDate();
+            } else if (sessionState.role === 'zonal') {
+                renderZonalReport();
+            }
+        }
+
+        // ---------------------------------------------------------------------
+        // 3. UI HELPERS (TOAST & CUSTOM MODAL)
+        // ---------------------------------------------------------------------
+        window.showToast = function(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            const bgClass = type === 'error' ? 'bg-rose-700' : (type === 'info' ? 'bg-slate-800' : 'bg-emerald-700');
+            const iconClass = type === 'error' ? 'fa-circle-exclamation' : (type === 'info' ? 'fa-circle-info' : 'fa-circle-check');
+
+            toast.className = `${bgClass} text-white px-4 py-3 rounded-xl shadow-lg flex items-center gap-2.5 text-sm font-medium transform transition-all duration-300 translate-y-0 opacity-100 max-w-sm`;
+            toast.innerHTML = `<i class="fa-solid ${iconClass} text-base"></i><span>${message}</span>`;
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        };
+
+        window.showModal = function({ title, message, confirmText = "ঠিক আছে", cancelText = "বাতিল", showCancel = false, onConfirm = null }) {
+            const modal = document.getElementById('custom-modal');
+            document.getElementById('modal-title').textContent = title;
+            document.getElementById('modal-message').textContent = message;
+
+            const cancelBtn = document.getElementById('modal-cancel-btn');
+            const confirmBtn = document.getElementById('modal-confirm-btn');
+
+            cancelBtn.textContent = cancelText;
+            confirmBtn.textContent = confirmText;
+            cancelBtn.style.display = showCancel ? 'inline-block' : 'none';
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+
+            const close = () => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            };
+
+            cancelBtn.onclick = close;
+            confirmBtn.onclick = () => {
+                close();
+                if (onConfirm) onConfirm();
+            };
+        };
+
+        // ---------------------------------------------------------------------
+        // 4. LOGIN & ROLE NAVIGATION HANDLERS
+        // ---------------------------------------------------------------------
+        window.toggleCustomAreaInput = function() {
+            const select = document.getElementById('am-area-select');
+            const wrapper = document.getElementById('custom-area-wrapper');
+            const input = document.getElementById('am-custom-area-name');
+            if (select.value === "8") {
+                wrapper.classList.remove('hidden');
+                input.required = true;
+            } else {
+                wrapper.classList.add('hidden');
+                input.required = false;
+            }
+        };
+
+        window.fillDemoAdmin = function() {
+            document.getElementById('zm-userid-input').value = 'admin';
+            document.getElementById('zm-password-input').value = '1234';
+            showToast("ডেমো এডমিন আইডি ও পাসওয়ার্ড পূরণ করা হয়েছে।", "info");
+        };
+
+        window.handleAreaManagerLogin = function(e) {
+            e.preventDefault();
+            const rawPhone = document.getElementById('am-phone-input').value.trim();
+            const cleanPhone = toEnglishDigits(rawPhone).replace(/[^0-9]/g, '');
+
+            if (cleanPhone.length < 11) {
+                showModal({
+                    title: "সঠিক মোবাইল নম্বর দিন",
+                    message: "অনুগ্রহ করে ১১ ডিজিটের একটি সঠিক মোবাইল নম্বর লিখুন (যেমন: 017XXXXXXXX)।"
+                });
+                return;
+            }
+
+            const areaId = document.getElementById('am-area-select').value;
+            if (!areaId) {
+                showModal({
+                    title: "এরিয়া নির্বাচন করুন",
+                    message: "তালিকা থেকে আপনার এরিয়ার নাম নির্বাচন করুন।"
+                });
+                return;
+            }
+
+            let areaName = "";
+            const foundArea = DEFAULT_AREAS.find(a => a.id === areaId);
+            if (areaId === "8") {
+                areaName = document.getElementById('am-custom-area-name').value.trim();
+                if (!areaName) {
+                    showModal({
+                        title: "এরিয়ার নাম লিখুন",
+                        message: "৮নং এরিয়ার নাম হাতে লিখুন।"
+                    });
+                    return;
+                }
+            } else {
+                areaName = foundArea.name;
+            }
+
+            sessionState = {
+                role: 'area',
+                phone: toBanglaDigits(cleanPhone),
+                rawPhone: cleanPhone,
+                areaId: areaId,
+                areaName: areaName,
+                areaSerial: foundArea ? foundArea.serial : toBanglaDigits(areaId)
+            };
+
+            // Update UI for Area Manager
+            document.getElementById('login-section').classList.add('hidden');
+            document.getElementById('zonal-manager-section').classList.add('hidden');
+            document.getElementById('area-manager-section').classList.remove('hidden');
+            document.getElementById('logout-btn').classList.remove('hidden');
+            document.getElementById('logout-btn').classList.add('inline-flex');
+
+            document.getElementById('am-badge-serial').textContent = sessionState.areaSerial;
+            document.getElementById('am-display-phone').textContent = sessionState.phone;
+            document.getElementById('am-display-area').textContent = sessionState.areaName;
+
+            // Initialize Date to Today
+            const dateInput = document.getElementById('entry-date');
+            if (!dateInput.value) {
+                dateInput.value = getTodayISO();
+            }
+            onEntryDateChange();
+            showToast(`স্বাগতম! ${sessionState.areaName} এরিয়া প্যানেলে প্রবেশ করেছেন।`);
+        };
+
+        window.handleZonalManagerLogin = function(e) {
+            e.preventDefault();
+            const userId = document.getElementById('zm-userid-input').value.trim().toLowerCase();
+            const password = document.getElementById('zm-password-input').value.trim();
+
+            const validUsers = ['admin', 'zonal_fhp', 'fhp'];
+            const validPasswords = ['1234', 'fhp2026', 'admin123'];
+
+            if (!validUsers.includes(userId) || !validPasswords.includes(password)) {
+                showModal({
+                    title: "ভুল ইউজার আইডি বা পাসওয়ার্ড",
+                    message: "সঠিক এডমিন ইউজার আইডি (admin) এবং পাসওয়ার্ড (1234) দিয়ে আবার চেষ্টা করুন।"
+                });
+                return;
+            }
+
+            sessionState = {
+                role: 'zonal',
+                phone: '',
+                areaId: '',
+                areaName: 'সকল এরিয়া',
+                areaSerial: ''
+            };
+
+            document.getElementById('login-section').classList.add('hidden');
+            document.getElementById('area-manager-section').classList.add('hidden');
+            document.getElementById('zonal-manager-section').classList.remove('hidden');
+            document.getElementById('logout-btn').classList.remove('hidden');
+            document.getElementById('logout-btn').classList.add('inline-flex');
+
+            const filterDateInput = document.getElementById('zm-filter-date');
+            if (!filterDateInput.value) {
+                filterDateInput.value = getTodayISO();
+            }
+            renderZonalReport();
+            showToast("জোনাল ম্যানেজার এডমিন প্যানেলে স্বাগতম!");
+        };
+
+        window.handleLogout = function() {
+            sessionState = { role: null, phone: '', areaId: '', areaName: '', areaSerial: '' };
+            document.getElementById('area-manager-section').classList.add('hidden');
+            document.getElementById('zonal-manager-section').classList.add('hidden');
+            document.getElementById('logout-btn').classList.add('hidden');
+            document.getElementById('logout-btn').classList.remove('inline-flex');
+            document.getElementById('login-section').classList.remove('hidden');
+            showToast("সফলভাবে লগআউট সম্পন্ন হয়েছে।", "info");
+        };
+
+        // ---------------------------------------------------------------------
+        // 5. AREA MANAGER FORM LOGIC & DYNAMIC LDP PRODUCT LIST
+        // ---------------------------------------------------------------------
+        window.onEntryDateChange = function() {
+            const dateVal = document.getElementById('entry-date').value;
+            if (dateVal) {
+                const dateObj = new Date(dateVal + "T00:00:00");
+                const dayName = BANGLA_DAYS[dateObj.getDay()];
+                const monthName = `${BANGLA_MONTHS[dateObj.getMonth()]} ${toBanglaDigits(dateObj.getFullYear())}`;
+                document.getElementById('entry-day').value = dayName;
+                document.getElementById('entry-month').value = monthName;
+            }
+            loadAreaExistingDataForSelectedDate();
+        };
+
+        window.addLdpProductRow = function(initialValue = "") {
+            const container = document.getElementById('ldp-products-container');
+            const rowIndex = container.children.length + 1;
+            const row = document.createElement('div');
+            row.className = "flex items-center gap-2 ldp-product-row";
+            row.innerHTML = `
+                <span class="w-7 h-9 rounded-lg bg-teal-100 text-teal-800 font-bold text-xs flex items-center justify-center shrink-0 row-num">
+                    ${toBanglaDigits(rowIndex)}
+                </span>
+                <input type="text" value="${initialValue.replace(/"/g, '&quot;')}" oninput="updateAreaLdpProductCount()"
+                    placeholder="পণ্যের নাম হাতে লিখুন (উদাঃ রাইস কুকার)"
+                    class="ldp-product-input w-full px-3.5 py-2 rounded-xl border border-slate-300 bg-white focus:ring-2 focus:ring-teal-500 outline-none text-sm font-medium">
+                <button type="button" onclick="removeLdpProductRow(this)" title="মুছে ফেলুন"
+                    class="w-9 h-9 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 flex items-center justify-center shrink-0 transition cursor-pointer">
+                    <i class="fa-solid fa-trash-can text-xs"></i>
+                </button>
+            `;
+            container.appendChild(row);
+            updateAreaLdpProductCount();
+        };
+
+        window.removeLdpProductRow = function(btn) {
+            const container = document.getElementById('ldp-products-container');
+            if (container.children.length <= 1) {
+                // Keep at least one empty row, just clear it
+                container.querySelector('.ldp-product-input').value = "";
+            } else {
+                btn.closest('.ldp-product-row').remove();
+            }
+            // Re-number rows
+            Array.from(container.children).forEach((row, idx) => {
+                row.querySelector('.row-num').textContent = toBanglaDigits(idx + 1);
+            });
+            updateAreaLdpProductCount();
+        };
+
+        window.getEnteredLdpProducts = function() {
+            const inputs = document.querySelectorAll('.ldp-product-input');
+            const products = [];
+            inputs.forEach(inp => {
+                const raw = inp.value.trim();
+                if (raw) {
+                    // Also support if user typed comma-separated items in a single box
+                    const splitItems = raw.split(/[,،\n]+/).map(s => s.trim()).filter(Boolean);
+                    products.push(...splitItems);
+                }
+            });
+            return products;
+        };
+
+        window.updateAreaLdpProductCount = function() {
+            const products = getEnteredLdpProducts();
+            const badge = document.getElementById('am-ldp-count-badge');
+            badge.textContent = `মোট পণ্য: ${toBanglaDigits(products.length)} টি`;
+        };
+
+        function resetLdpProductRows(productsList = []) {
+            const container = document.getElementById('ldp-products-container');
+            container.innerHTML = "";
+            if (productsList && productsList.length > 0) {
+                productsList.forEach(p => addLdpProductRow(p));
+            } else {
+                addLdpProductRow("");
+                addLdpProductRow("");
+            }
+            updateAreaLdpProductCount();
+        }
+
+        function loadAreaExistingDataForSelectedDate() {
+            if (sessionState.role !== 'area') return;
+            const dateVal = document.getElementById('entry-date').value;
+            const docKey = `${dateVal}_${sessionState.areaId}`;
+            const existing = allEntriesMap[docKey];
+
+            const previewBox = document.getElementById('am-submitted-preview');
+
+            if (existing) {
+                document.getElementById('entry-region').value = existing.region || "কিশোরগঞ্জ অঞ্চল";
+                if (existing.day) document.getElementById('entry-day').value = existing.day;
+                if (existing.month) document.getElementById('entry-month').value = existing.month;
+
+                document.getElementById('field-member-change').value = existing.memberChange || "";
+                document.getElementById('field-collectible-person').value = existing.collectiblePerson || "";
+                document.getElementById('field-collectible-amount').value = existing.collectibleAmount || "";
+                document.getElementById('field-due-person').value = existing.duePerson || "";
+                document.getElementById('field-due-amount').value = existing.dueAmount || "";
+                document.getElementById('field-overdue-person').value = existing.overduePerson || "";
+                document.getElementById('field-overdue-amount').value = existing.overdueAmount || "";
+                document.getElementById('field-overdue-minus').value = existing.overdueMinus || "";
+                document.getElementById('field-loanform-person').value = existing.loanFormPerson || "";
+                document.getElementById('field-loanform-amount').value = existing.loanFormAmount || "";
+                document.getElementById('field-ldp-person').value = existing.ldpPerson || "";
+                document.getElementById('field-ldp-amount').value = existing.ldpAmount || "";
+                document.getElementById('field-cash-person').value = existing.cashPerson || "";
+                document.getElementById('field-cash-amount').value = existing.cashAmount || "";
+
+                resetLdpProductRows(existing.ldpProducts || []);
+
+                // Show preview card
+                previewBox.classList.remove('hidden');
+                document.getElementById('am-last-updated').textContent = `জমাদানকারী মোবাইল: ${existing.submittedByPhone}`;
+                const prodText = (existing.ldpProducts && existing.ldpProducts.length > 0)
+                    ? `${existing.ldpProducts.join(', ')} (মোট: ${toBanglaDigits(existing.ldpProducts.length)} টি)`
+                    : "নেই";
+
+                document.getElementById('am-preview-content').innerHTML = `
+                    <div class="p-3 rounded-xl bg-slate-50 border border-slate-200"><span class="text-xs text-slate-500 block">সদস্য (+/-)</span><strong class="text-slate-800">${existing.memberChange || '০'}</strong></div>
+                    <div class="p-3 rounded-xl bg-slate-50 border border-slate-200"><span class="text-xs text-slate-500 block">আদায়যোগ্য</span><strong class="text-slate-800">${existing.collectiblePerson || '০'} জন / ${existing.collectibleAmount || '০'} ৳</strong></div>
+                    <div class="p-3 rounded-xl bg-slate-50 border border-slate-200"><span class="text-xs text-slate-500 block">আদায়ের বাকী</span><strong class="text-slate-800">${existing.duePerson || '০'} জন / ${existing.dueAmount || '০'} ৳</strong></div>
+                    <div class="p-3 rounded-xl bg-slate-50 border border-slate-200"><span class="text-xs text-slate-500 block">বকেয়া আদায়</span><strong class="text-slate-800">${existing.overduePerson || '০'} জন / ${existing.overdueAmount || '০'} ৳ (মাইনাস: ${existing.overdueMinus || '০'})</strong></div>
+                    <div class="p-3 rounded-xl bg-slate-50 border border-slate-200"><span class="text-xs text-slate-500 block">ঋণ ফরম</span><strong class="text-slate-800">${existing.loanFormPerson || '০'} জন / ${existing.loanFormAmount || '০'} ৳</strong></div>
+                    <div class="p-3 rounded-xl bg-teal-50 border border-teal-200"><span class="text-xs text-teal-700 block">LDP পণ্য</span><strong class="text-teal-900">${prodText}</strong></div>
+                    <div class="p-3 rounded-xl bg-emerald-50 border border-emerald-200"><span class="text-xs text-emerald-700 block">ক্যাশ ইন হ্যান্ড</span><strong class="text-emerald-900">${existing.cashPerson || '০'} জন / ${existing.cashAmount || '০'} ৳</strong></div>
+                `;
+            } else {
+                // Clear form fields for new entry
+                ['field-member-change', 'field-collectible-person', 'field-collectible-amount',
+                 'field-due-person', 'field-due-amount', 'field-overdue-person', 'field-overdue-amount',
+                 'field-overdue-minus', 'field-loanform-person', 'field-loanform-amount',
+                 'field-ldp-person', 'field-ldp-amount', 'field-cash-person', 'field-cash-amount'
+                ].forEach(id => document.getElementById(id).value = "");
+                resetLdpProductRows([]);
+                previewBox.classList.add('hidden');
+            }
+        }
+
+        window.handleSaveAreaEntry = async function(e) {
+            e.preventDefault();
+            if (sessionState.role !== 'area') return;
+
+            const dateVal = document.getElementById('entry-date').value;
+            if (!dateVal) {
+                showModal({ title: "তারিখ নির্বাচন করুন", message: "অনুগ্রহ করে রিপোর্টের তারিখ নির্বাচন করুন।" });
+                return;
+            }
+
+            const ldpProducts = getEnteredLdpProducts();
+            const docKey = `${dateVal}_${sessionState.areaId}`;
+
+            const entryPayload = {
+                date: dateVal,
+                day: document.getElementById('entry-day').value.trim(),
+                month: document.getElementById('entry-month').value.trim(),
+                region: document.getElementById('entry-region').value.trim() || "কিশোরগঞ্জ অঞ্চল",
+                areaId: sessionState.areaId,
+                areaSerial: sessionState.areaSerial,
+                areaName: sessionState.areaName,
+                submittedByPhone: sessionState.phone,
+                memberChange: document.getElementById('field-member-change').value.trim(),
+                collectiblePerson: document.getElementById('field-collectible-person').value.trim(),
+                collectibleAmount: document.getElementById('field-collectible-amount').value.trim(),
+                duePerson: document.getElementById('field-due-person').value.trim(),
+                dueAmount: document.getElementById('field-due-amount').value.trim(),
+                overduePerson: document.getElementById('field-overdue-person').value.trim(),
+                overdueAmount: document.getElementById('field-overdue-amount').value.trim(),
+                overdueMinus: document.getElementById('field-overdue-minus').value.trim(),
+                loanFormPerson: document.getElementById('field-loanform-person').value.trim(),
+                loanFormAmount: document.getElementById('field-loanform-amount').value.trim(),
+                ldpPerson: document.getElementById('field-ldp-person').value.trim(),
+                ldpAmount: document.getElementById('field-ldp-amount').value.trim(),
+                ldpProducts: ldpProducts,
+                ldpProductCount: ldpProducts.length,
+                cashPerson: document.getElementById('field-cash-person').value.trim(),
+                cashAmount: document.getElementById('field-cash-amount').value.trim(),
+                updatedAt: new Date().toISOString()
+            };
+
+            const saveBtn = document.getElementById('save-entry-btn');
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i><span>সংরক্ষণ হচ্ছে...</span>`;
+
+            try {
+                if (isFirebaseReady && db && currentUser) {
+                    const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'daily_entries', docKey);
+                    await setDoc(docRef, entryPayload);
+                } else {
+                    allEntriesMap[docKey] = entryPayload;
+                    saveLocalFallback();
+                    loadAreaExistingDataForSelectedDate();
+                }
+
+                showToast(`${sessionState.areaName} এরিয়ার তথ্য সফলভাবে জমা হয়েছে!`);
+            } catch (err) {
+                console.error("Save error:", err);
+                showModal({
+                    title: "তথ্য সংরক্ষণে ত্রুটি",
+                    message: "দুঃখিত, তথ্য জমা দিতে সমস্যা হয়েছে। ইন্টারনেট সংযোগ পরীক্ষা করে আবার চেষ্টা করুন।"
+                });
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = `<i class="fa-solid fa-paper-plane"></i><span>দৈনিক তথ্য জমা দিন</span>`;
+            }
+        };
+
+        // ---------------------------------------------------------------------
+        // 6. ZONAL MANAGER CONSOLIDATED REPORT RENDERING & PDF EXPORT
+        // ---------------------------------------------------------------------
+        window.renderZonalReport = function() {
+            const selectedDate = document.getElementById('zm-filter-date').value || getTodayISO();
+            const regionOverride = document.getElementById('zm-region-override').value.trim();
+
+            // Determine Day, Month, and Region from submitted entries or selected date
+            const dateObj = new Date(selectedDate + "T00:00:00");
+            const defaultDay = BANGLA_DAYS[dateObj.getDay()];
+            const defaultMonth = `${BANGLA_MONTHS[dateObj.getMonth()]} ${toBanglaDigits(dateObj.getFullYear())}`;
+
+            let detectedRegion = "কিশোরগঞ্জ অঞ্চল";
+            let detectedDay = defaultDay;
+            let detectedMonth = defaultMonth;
+            let submittedCount = 0;
+
+            // Totals accumulators
+            let totals = {
+                memberChange: 0,
+                collectiblePerson: 0,
+                collectibleAmount: 0,
+                duePerson: 0,
+                dueAmount: 0,
+                overduePerson: 0,
+                overdueAmount: 0,
+                overdueMinus: 0,
+                loanFormPerson: 0,
+                loanFormAmount: 0,
+                ldpPerson: 0,
+                ldpAmount: 0,
+                cashPerson: 0,
+                cashAmount: 0
+            };
+
+            let allConsolidatedProducts = [];
+            const tbody = document.getElementById('zonal-report-tbody');
+            const logsGrid = document.getElementById('submission-logs-grid');
+            tbody.innerHTML = "";
+            logsGrid.innerHTML = "";
+
+            DEFAULT_AREAS.forEach((area) => {
+                const docKey = `${selectedDate}_${area.id}`;
+                const entry = allEntriesMap[docKey];
+
+                if (entry) {
+                    submittedCount++;
+                    if (entry.region) detectedRegion = entry.region;
+                    if (entry.day) detectedDay = entry.day;
+                    if (entry.month) detectedMonth = entry.month;
+
+                    totals.memberChange += parseNumericValue(entry.memberChange);
+                    totals.collectiblePerson += parseNumericValue(entry.collectiblePerson);
+                    totals.collectibleAmount += parseNumericValue(entry.collectibleAmount);
+                    totals.duePerson += parseNumericValue(entry.duePerson);
+                    totals.dueAmount += parseNumericValue(entry.dueAmount);
+                    totals.overduePerson += parseNumericValue(entry.overduePerson);
+                    totals.overdueAmount += parseNumericValue(entry.overdueAmount);
+                    totals.overdueMinus += parseNumericValue(entry.overdueMinus);
+                    totals.loanFormPerson += parseNumericValue(entry.loanFormPerson);
+                    totals.loanFormAmount += parseNumericValue(entry.loanFormAmount);
+                    totals.ldpPerson += parseNumericValue(entry.ldpPerson);
+                    totals.ldpAmount += parseNumericValue(entry.ldpAmount);
+                    totals.cashPerson += parseNumericValue(entry.cashPerson);
+                    totals.cashAmount += parseNumericValue(entry.cashAmount);
+
+                    if (Array.isArray(entry.ldpProducts) && entry.ldpProducts.length > 0) {
+                        allConsolidatedProducts.push(...entry.ldpProducts);
+                    }
+                }
+
+                const displayAreaName = entry ? (entry.areaName || area.name) : area.name;
+                const rowProducts = (entry && Array.isArray(entry.ldpProducts) && entry.ldpProducts.length > 0)
+                    ? `${entry.ldpProducts.join(', ')} <span class="font-bold text-teal-900">(${toBanglaDigits(entry.ldpProducts.length)} টি)</span>`
+                    : "";
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="font-bold">${area.serial}</td>
+                    <td class="text-left font-bold px-2">${displayAreaName}</td>
+                    <td>${entry && entry.memberChange ? toBanglaDigits(entry.memberChange) : ''}</td>
+                    <td>${entry && entry.collectiblePerson ? toBanglaDigits(entry.collectiblePerson) : ''}</td>
+                    <td>${entry && entry.collectibleAmount ? toBanglaDigits(entry.collectibleAmount) : ''}</td>
+                    <td>${entry && entry.duePerson ? toBanglaDigits(entry.duePerson) : ''}</td>
+                    <td>${entry && entry.dueAmount ? toBanglaDigits(entry.dueAmount) : ''}</td>
+                    <td>${entry && entry.overduePerson ? toBanglaDigits(entry.overduePerson) : ''}</td>
+                    <td>${entry && entry.overdueAmount ? toBanglaDigits(entry.overdueAmount) : ''}</td>
+                    <td>${entry && entry.overdueMinus ? toBanglaDigits(entry.overdueMinus) : ''}</td>
+                    <td>${entry && entry.loanFormPerson ? toBanglaDigits(entry.loanFormPerson) : ''}</td>
+                    <td>${entry && entry.loanFormAmount ? toBanglaDigits(entry.loanFormAmount) : ''}</td>
+                    <td>${entry && entry.ldpPerson ? toBanglaDigits(entry.ldpPerson) : ''}</td>
+                    <td>${entry && entry.ldpAmount ? toBanglaDigits(entry.ldpAmount) : ''}</td>
+                    <td class="text-left text-xs leading-snug px-2">${rowProducts}</td>
+                    <td>${entry && entry.cashPerson ? toBanglaDigits(entry.cashPerson) : ''}</td>
+                    <td>${entry && entry.cashAmount ? toBanglaDigits(entry.cashAmount) : ''}</td>
+                `;
+                tbody.appendChild(tr);
+
+                // Build submission log card for Zonal Manager reference
+                const logCard = document.createElement('div');
+                if (entry) {
+                    logCard.className = "p-3.5 rounded-xl bg-emerald-50/70 border border-emerald-200 flex flex-col justify-between gap-2";
+                    logCard.innerHTML = `
+                        <div class="flex items-center justify-between">
+                            <span class="font-bold text-slate-800">${area.serial}. ${displayAreaName}</span>
+                            <span class="px-2 py-0.5 rounded-full bg-emerald-600 text-white text-[11px] font-bold">জমা হয়েছে</span>
+                        </div>
+                        <div class="text-xs text-slate-600">
+                            <div><i class="fa-solid fa-phone text-emerald-700 mr-1"></i>মোবাইল: <strong>${entry.submittedByPhone}</strong></div>
+                            <div class="mt-0.5"><i class="fa-solid fa-box text-teal-700 mr-1"></i>LDP পণ্য: <strong>${toBanglaDigits(entry.ldpProducts ? entry.ldpProducts.length : 0)} টি</strong></div>
+                        </div>
+                        <div class="pt-1 border-t border-emerald-200/70 flex justify-end">
+                            <button onclick="deleteAreaEntry('${docKey}', '${displayAreaName}')" class="text-xs text-rose-600 hover:text-rose-800 font-semibold flex items-center gap-1 cursor-pointer">
+                                <i class="fa-solid fa-trash"></i> মুছে ফেলুন
+                            </button>
+                        </div>
+                    `;
+                } else {
+                    logCard.className = "p-3.5 rounded-xl bg-slate-50 border border-slate-200 flex flex-col justify-between gap-1 opacity-75";
+                    logCard.innerHTML = `
+                        <div class="flex items-center justify-between">
+                            <span class="font-bold text-slate-700">${area.serial}. ${area.name || 'অনির্ধারিত এরিয়া'}</span>
+                            <span class="px-2 py-0.5 rounded-full bg-slate-200 text-slate-600 text-[11px] font-bold">বাকী আছে</span>
+                        </div>
+                        <div class="text-xs text-slate-500">এই তারিখে এখনো তথ্য জমা দেওয়া হয়নি।</div>
+                    `;
+                }
+                logsGrid.appendChild(logCard);
+            });
+
+            // Format Member Change total with + sign if positive
+            const memberTotalFormatted = totals.memberChange > 0
+                ? `+${formatBanglaNumber(totals.memberChange)}`
+                : formatBanglaNumber(totals.memberChange);
+
+            const totalProductCount = allConsolidatedProducts.length;
+            const totalLdpCellText = totalProductCount > 0
+                ? `মোট পণ্য: ${toBanglaDigits(totalProductCount)} টি`
+                : "০ টি";
+
+            // Render Total Row (মোট)
+            const tfoot = document.getElementById('zonal-report-tfoot');
+            tfoot.innerHTML = `
+                <tr>
+                    <td colspan="2" class="text-center font-bold text-sm">মোট</td>
+                    <td>${memberTotalFormatted}</td>
+                    <td>${formatBanglaNumber(totals.collectiblePerson)}</td>
+                    <td>${formatBanglaNumber(totals.collectibleAmount)}</td>
+                    <td>${formatBanglaNumber(totals.duePerson)}</td>
+                    <td>${formatBanglaNumber(totals.dueAmount)}</td>
+                    <td>${formatBanglaNumber(totals.overduePerson)}</td>
+                    <td>${formatBanglaNumber(totals.overdueAmount)}</td>
+                    <td>${formatBanglaNumber(totals.overdueMinus)}</td>
+                    <td>${formatBanglaNumber(totals.loanFormPerson)}</td>
+                    <td>${formatBanglaNumber(totals.loanFormAmount)}</td>
+                    <td>${formatBanglaNumber(totals.ldpPerson)}</td>
+                    <td>${formatBanglaNumber(totals.ldpAmount)}</td>
+                    <td class="text-center font-bold text-teal-900 bg-teal-50">${totalLdpCellText}</td>
+                    <td>${formatBanglaNumber(totals.cashPerson)}</td>
+                    <td>${formatBanglaNumber(totals.cashAmount)}</td>
+                </tr>
+            `;
+
+            // Update Top & Bottom Metadata Headers
+            document.getElementById('rep-region-name').textContent = regionOverride || detectedRegion;
+            document.getElementById('rep-date-text').textContent = formatBanglaDate(selectedDate);
+            document.getElementById('rep-day-text').textContent = detectedDay;
+            document.getElementById('rep-month-text').textContent = detectedMonth;
+            document.getElementById('zm-submitted-count').textContent = `${toBanglaDigits(submittedCount)} / ৮ টি এরিয়া`;
+
+            // Update Consolidated LDP Products Summary Box
+            document.getElementById('consolidated-ldp-total-badge').textContent = `সর্বমোট পণ্য: ${toBanglaDigits(totalProductCount)} টি`;
+            const namesListEl = document.getElementById('consolidated-ldp-names-list');
+            if (totalProductCount > 0) {
+                const numberedList = allConsolidatedProducts.map((item, idx) => `${toBanglaDigits(idx + 1)}. ${item}`).join('  |  ');
+                namesListEl.innerHTML = `${numberedList} <br><strong class="text-emerald-900 mt-1 inline-block">সর্বমোট পণ্যের সংখ্যা: ${toBanglaDigits(totalProductCount)} টি</strong>`;
+            } else {
+                namesListEl.textContent = "এই তারিখে কোনো LDP পণ্য যুক্ত করা হয়নি।";
+            }
+        };
+
+        window.deleteAreaEntry = function(docKey, areaName) {
+            showModal({
+                title: "তথ্য মুছে ফেলার নিশ্চিতকরণ",
+                message: `আপনি কি নিশ্চিতভাবে "${areaName}" এরিয়ার এই তারিখের জমাকৃত তথ্য মুছে ফেলতে চান?`,
+                confirmText: "হ্যাঁ, মুছে ফেলুন",
+                cancelText: "বাতিল",
+                showCancel: true,
+                onConfirm: async () => {
+                    try {
+                        if (isFirebaseReady && db && currentUser) {
+                            await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'daily_entries', docKey));
+                        } else {
+                            delete allEntriesMap[docKey];
+                            saveLocalFallback();
+                            renderZonalReport();
+                        }
+                        showToast(`${areaName} এরিয়ার তথ্য মুছে ফেলা হয়েছে।`, "info");
+                    } catch (err) {
+                        console.error("Delete failed:", err);
+                        showToast("তথ্য মুছতে সমস্যা হয়েছে।", "error");
+                    }
+                }
+            });
+        };
+
+        // Direct PDF Download using html2pdf.js
+        window.downloadPdfReport = function() {
+            const element = document.getElementById('printable-report-area');
+            const selectedDate = document.getElementById('zm-filter-date').value || getTodayISO();
+            const filename = `FHP_Daily_Report_${selectedDate}.pdf`;
+
+            showToast("PDF ফাইল তৈরি হচ্ছে, অনুগ্রহ করে অপেক্ষা করুন...", "info");
+
+            const opt = {
+                margin:       [6, 6, 6, 6],
+                filename:     filename,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true, logging: false },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' }
+            };
+
+            if (typeof html2pdf !== 'undefined') {
+                html2pdf().set(opt).from(element).save().then(() => {
+                    showToast("PDF ফাইল ডাউনলোড সম্পন্ন হয়েছে!");
+                }).catch(() => {
+                    window.print();
+                });
+            } else {
+                window.print();
+            }
+        };
+
+        // Initialize app on load
+        window.addEventListener('DOMContentLoaded', () => {
+            resetLdpProductRows([]);
+            initFirebase();
+        });
+    </script>
+</body>
+</html>
